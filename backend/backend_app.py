@@ -60,5 +60,24 @@ def delete_book(id):
     return jsonify({"message": f'Post with id {id} has been deleted successfully.'}), 200
 
 
+@app.route('/api/posts/<int:id>', methods=['PUT'])
+def update(id):
+    post = find_book_by_id(id)
+    post_to_update = request.get_json()
+
+    if post is None:
+        return jsonify("Post not Found"), 404
+
+    if post_to_update["title"] == "" or post_to_update["content"] == "":
+        pass
+
+    else:
+        for post in POSTS:
+            if post["id"] == id:
+                post["title"] = post_to_update["title"]
+                post["content"] = post_to_update["content"]
+                return jsonify(post), 200
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
