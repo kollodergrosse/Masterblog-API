@@ -1,6 +1,5 @@
-from flask import Flask, jsonify, request, redirect, url_for
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-import json
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
@@ -13,6 +12,31 @@ POSTS = [
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
+    sort_by = request.args.get('sort', '').strip()
+    direction = request.args.get('direction', '').strip().lower()
+    current_posts = list(POSTS)
+    allowed_parameter = ['title', 'content']
+
+    if direction not in ['asc', 'desc']:
+        return jsonify({
+            "error": "Bad Request",
+            "message": f"Unallowed sorting direction '{direction}'. Allowed is 'asc' or 'desc'."
+        }), 400
+
+    if sort_by and sort_by not in allowed_parameter:
+        return jsonify({
+            "error": "Bad Request",
+            "message": f"Unallowed sorting '{sort_by}'. Allowed is: {', '.join(allowed_parameter)}."
+        }), 400
+
+    if sort_by and current_posts:
+        reverse_order = (direction == 'desc')
+
+        sorted_posts = sorted(current_posts,
+                              key=lambda x: x[sort_by].lower() if isinstance(x[sort_by], str) else x[sort_by],
+                              reverse=reverse_order)
+        return jsonify(sorted_posts), 200
+
     return jsonify(POSTS)
 
 
@@ -23,11 +47,11 @@ def add():
 
         title = new_post["title"]
         if title == "":
-            return jsonify("Bad request: 'Title' is required."), 400
+            return jsonify({"error": "Bad request", "message": "'Title' is required."}), 400
 
         content = new_post['content']
         if content == "":
-            return jsonify("Bad request: 'Content' is required."), 400
+            return jsonify({"error": "Bad request", "message": "'Content' is required."}), 400
 
         new_id = POSTS[-1]['id'] + 1 if POSTS else 1
 
@@ -53,7 +77,7 @@ def delete_book(id):
     post = find_book_by_id(id)
 
     if post is None:
-        return jsonify("Post not Found"), 404
+        return jsonify({"error": "Not found", "message": "Post not Found"}), 404
 
     POSTS.remove(post)
 
@@ -66,7 +90,7 @@ def update(id):
     post_to_update = request.get_json()
 
     if post is None:
-        return jsonify("Post not Found"), 404
+        return jsonify({"error": "Not found", "message": "Post not Found"}), 404
 
     if post_to_update["title"] == "" or post_to_update["content"] == "":
         pass
