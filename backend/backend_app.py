@@ -12,10 +12,13 @@ POSTS = [
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
-    sort_by = request.args.get('sort', '').strip()
-    direction = request.args.get('direction', '').strip().lower()
+    sort_by = request.args.get('sort', None)
+    direction = request.args.get('direction', None)
     current_posts = list(POSTS)
     allowed_parameter = ['title', 'content']
+
+    if not sort_by or not direction:
+        return jsonify(POSTS), 200
 
     if direction not in ['asc', 'desc']:
         return jsonify({
@@ -35,9 +38,8 @@ def get_posts():
         sorted_posts = sorted(current_posts,
                               key=lambda x: x[sort_by].lower() if isinstance(x[sort_by], str) else x[sort_by],
                               reverse=reverse_order)
-        return jsonify(sorted_posts), 200
 
-    return jsonify(POSTS)
+        return jsonify(sorted_posts), 200
 
 
 @app.route('/api/posts', methods=['POST'])
