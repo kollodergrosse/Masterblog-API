@@ -12,6 +12,21 @@ POSTS = [
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
+    """
+    Retrieve all posts with optional sorting.
+
+    Supports query parameters 'sort' (field to sort by) and 'direction' ('asc' or 'desc').
+    Validates parameters and returns a 400 Bad Request if invalid fields or directions
+    are provided.
+
+    Query Parameters:
+        sort (str): The field to sort by ('title' or 'content').
+        direction (str): The sorting order ('asc' or 'desc').
+
+    Returns:
+        tuple: JSON response containing the list of posts and the HTTP 200 OK status,
+               or an error message with HTTP 400 Bad Request.
+    """
     sort_by = request.args.get('sort', None)
     direction = request.args.get('direction', None)
     current_posts = list(POSTS)
@@ -44,6 +59,20 @@ def get_posts():
 
 @app.route('/api/posts', methods=['POST'])
 def add():
+    """
+    Create and add a new post.
+
+    Expects a JSON payload containing 'title' and 'content'. Validates that both fields
+    are present and non-empty. Automatically increments and assigns a unique ID to the new post.
+
+    JSON Payload:
+        title (str): The title of the new post.
+        content (str): The body text of the new post.
+
+    Returns:
+        tuple: JSON response with the updated list of all posts and HTTP 201 Created status,
+               or an error message with HTTP 400 Bad Request if validation fails.
+    """
     if request.method == 'POST':
         new_post = request.get_json()
 
@@ -69,13 +98,33 @@ def add():
 
 
 def find_book_by_id(post_id):
-    """ Find the book with the id `book_id`.
-    If there is no book with this id, return None. """
+    """
+    Find a specific post within the POSTS list by its unique ID.
+
+    Args:
+        post_id (int): The unique identifier of the post to search for.
+
+    Returns:
+        dict or None: The post dictionary if found, otherwise None.
+    """
     return next((post for post in POSTS if post['id'] == post_id), None)
 
 
 @app.route('/api/posts/<int:id>', methods=['DELETE'])
 def delete_book(id):
+    """
+    Delete an existing post by its ID.
+
+    Checks if the post exists. If found, removes it from the global list.
+    Otherwise, triggers a 404 Not Found error.
+
+    Args:
+        id (int): The unique identifier of the post to delete.
+
+    Returns:
+        tuple: JSON confirmation message with HTTP 200 OK status,
+               or an error message with HTTP 404 Not Found.
+    """
     post = find_book_by_id(id)
 
     if post is None:
@@ -88,6 +137,23 @@ def delete_book(id):
 
 @app.route('/api/posts/<int:id>', methods=['PUT'])
 def update(id):
+    """
+    Update the title and content of an existing post by its ID.
+
+    Expects a JSON payload with the updated 'title' and 'content'. Verifies the existence
+    of the post (returns 404 if missing) and applies updates if fields are valid.
+
+    Args:
+        id (int): The unique identifier of the post to update.
+
+    JSON Payload:
+        title (str): The updated title.
+        content (str): The updated content.
+
+    Returns:
+        tuple: JSON response with the updated post object and HTTP 200 OK status,
+               or an error message with HTTP 404 Not Found.
+    """
     post = find_book_by_id(id)
     post_to_update = request.get_json()
 
@@ -107,6 +173,19 @@ def update(id):
 
 @app.route('/api/posts/search', methods=['GET'])
 def search():
+    """
+    Search for posts containing specific text in their title or content.
+
+    Reads 'title' and 'content' from query parameters. If both parameters are empty
+    or missing, it immediately returns an empty list. Matches are case-insensitive.
+
+    Query Parameters:
+        title (str): Substring to look for in post titles.
+        content (str): Substring to look for in post content.
+
+    Returns:
+        tuple: JSON response containing a list of matching posts and HTTP 200 OK status.
+    """
     search_content = request.args.get('content', '').strip()
     search_title = request.args.get('title', '').strip()
 
